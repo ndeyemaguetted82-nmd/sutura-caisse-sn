@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1d684a" />
+    <title>Sutura Caisse</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <div id="auth-screen" class="auth-screen">
+        <div class="auth-card">
+          <div class="brand-block auth-brand">
+            <div class="brand-mark" aria-hidden="true">
+              <span class="brand-mark-inner">S</span>
+            </div>
+            <div>
+              <p class="eyebrow">Sutura Caisse SN</p>
+              <h1>Sutura Caisse</h1>
+            </div>
+          </div>
+
+          <div class="auth-intro">
+            <h2 id="auth-title">Connexion</h2>
+            <p id="auth-subtitle">Récupérez vos données de caisse en vous reconnectant.</p>
+          </div>
+
+          <form id="auth-form" data-mode="login">
+            <label>
+              Email
+              <input type="email" name="email" placeholder="vous@exemple.com" autocomplete="email" required />
+            </label>
+
+            <label>
+              Mot de passe
+              <input type="password" name="password" placeholder="••••••••" autocomplete="current-password" minlength="6" required />
+            </label>
+
+            <button type="submit" id="auth-submit-btn">Se connecter</button>
+            <button type="button" class="secondary-link" id="auth-toggle-mode">Créer un compte</button>
+            <p id="auth-feedback" class="auth-feedback" aria-live="polite"></p>
+          </form>
+        </div>
+      </div>
+
+      <div id="app-screen" class="app-panel hidden">
+        <header class="topbar">
+          <div class="brand-block">
+            <div class="brand-mark" aria-hidden="true">
+              <span class="brand-mark-inner">S</span>
+            </div>
+            <div>
+              <p class="eyebrow">Boutique</p>
+              <h1>Sutura Caisse</h1>
+            </div>
+          </div>
+
+          <div class="user-actions">
+            <span id="current-user-email" class="user-email"></span>
+            <button type="button" class="logout-btn" id="logout-btn">Déconnexion</button>
+          </div>
+        </header>
+
+        <div id="offline-info" class="offline-info" role="status" aria-live="polite">
+          Vos données sont enregistrées en local dans votre téléphone. L'application continue de fonctionner parfaitement sans connexion Internet.
+        </div>
+
+        <div id="pro-modal" class="pro-modal hidden" aria-hidden="true">
+          <div class="pro-modal-card" role="dialog" aria-modal="true" aria-labelledby="pro-modal-title">
+            <button type="button" class="modal-close" id="close-pro-modal" aria-label="Fermer">×</button>
+            <div class="pro-modal-header">
+              <span class="pro-badge">PRO</span>
+              <h3 id="pro-modal-title">Sén Caisse Pro</h3>
+            </div>
+
+            <p class="pro-modal-price">5 000 FCFA / mois ou ajout illimité de clients</p>
+            <p class="pro-modal-info">
+              Paiement direct par Wave ou Orange Money au numéro de réception : <strong>78 293 98 29</strong>
+            </p>
+
+            <div class="pro-payment-actions">
+              <button type="button" class="payment-pro-btn wave-btn" data-payment-method="Wave">Payer avec Wave</button>
+              <button type="button" class="payment-pro-btn orange-btn" data-payment-method="Orange Money">Payer avec Orange Money</button>
+              <button type="button" class="payment-pro-btn whatsapp-btn" data-payment-method="WhatsApp">Confirmer le paiement sur WhatsApp</button>
+            </div>
+
+            <div class="pro-confirmation-box">
+              <p>J’ai effectué le paiement</p>
+              <form id="pro-confirmation-form">
+                <input type="text" id="pro-name" name="proName" placeholder="Votre nom" required />
+                <input type="tel" id="pro-phone" name="proPhone" placeholder="Votre numéro" required />
+                <button type="submit" class="confirm-btn">Envoyer la confirmation</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <main class="tab-content">
+          <section id="cash-tab" class="tab-panel active" aria-label="Caisse">
+            <div class="card form-card">
+              <h2>Nouvelle vente</h2>
+              <form id="sale-form">
+                <label>
+                  Produit
+                  <input type="text" id="sale-product" name="product" placeholder="Ex : Riz 25kg" required />
+                </label>
+
+                <label>
+                  Montant (FCFA)
+                  <input type="number" id="sale-amount" name="amount" min="1" placeholder="5000" required />
+                </label>
+
+                <label>Paiement</label>
+                <div class="payment-selector" aria-label="Mode de paiement de la vente">
+                  <button type="button" class="payment-option active" data-payment="Espèces">[Espèces]</button>
+                  <button type="button" class="payment-option" data-payment="Wave">[Wave]</button>
+                  <button type="button" class="payment-option" data-payment="Orange Money">[Orange Money]</button>
+                </div>
+                <input type="hidden" id="sale-payment" name="payment" value="Espèces" />
+
+                <button type="button" id="sale-submit-btn">Enregistrer la vente</button>
+              </form>
+            </div>
+
+            <div class="mini-stat">
+              <span>Ventes du jour</span>
+              <strong id="sales-total">0 FCFA</strong>
+            </div>
+
+            <div class="card">
+              <h2>Historique</h2>
+              <ul id="sales-list" class="record-list"></ul>
+            </div>
+          </section>
+
+          <section id="debts-tab" class="tab-panel" aria-label="Carnet de dettes">
+            <div class="card form-card">
+              <h2>Ajouter une dette</h2>
+              <form id="debt-form">
+                <label>
+                  Nom du client
+                  <input type="text" id="debt-name" name="name" placeholder="Ex : Moussa Diop" required />
+                </label>
+
+                <label>
+                  Numéro de téléphone
+                  <input type="tel" id="debt-phone" name="phone" placeholder="Ex : 775 123 456" required />
+                </label>
+
+                <label>
+                  Montant dû (FCFA)
+                  <input type="number" id="debt-amount" name="amount" min="1" placeholder="15000" required />
+                </label>
+
+                <label>
+                  Date
+                  <input type="date" id="dateDette" name="date" required />
+                </label>
+
+                <label>Paiement</label>
+                <div class="payment-selector" aria-label="Mode de paiement de la dette">
+                  <button type="button" class="payment-option active" data-payment="Espèces">[Espèces]</button>
+                  <button type="button" class="payment-option" data-payment="Wave">[Wave]</button>
+                  <button type="button" class="payment-option" data-payment="Orange Money">[Orange Money]</button>
+                </div>
+                <input type="hidden" id="debt-payment" name="payment" value="Espèces" />
+
+                <button type="button" id="debt-submit-btn">Ajouter la dette</button>
+              </form>
+            </div>
+
+            <div class="card">
+              <h2>Carnet de dettes</h2>
+              <ul id="debts-list" class="record-list"></ul>
+            </div>
+          </section>
+
+          <section id="summary-tab" class="tab-panel" aria-label="Bilan">
+            <div class="pro-banner" aria-label="Sén Caisse Pro">
+              <div class="pro-badge">PRO</div>
+              <h3>Sén Caisse Pro</h3>
+              <p class="pro-price">5 000 FCFA / mois</p>
+              <p class="pro-payments">Paiement : Wave ou Orange Money</p>
+              <ul class="pro-features">
+                <li>Suivi de stock</li>
+                <li>Export PDF des comptes</li>
+                <li>SMS de rappel automatiques</li>
+              </ul>
+              <button type="button" class="pro-button" id="open-pro-modal">Choisir Pro</button>
+            </div>
+
+            <div class="summary-grid">
+              <div class="summary-card accent">
+                <span>Chiffre d'affaires</span>
+                <strong id="summary-sales">0 FCFA</strong>
+              </div>
+              <div class="summary-card">
+                <span>Dettes à recouvrer</span>
+                <strong id="summary-debts">0 FCFA</strong>
+              </div>
+              <div class="summary-card">
+                <span>Nombre de dettes</span>
+                <strong id="summary-debt-count">0</strong>
+              </div>
+              <div class="summary-card">
+                <span>Ventes aujourd'hui</span>
+                <strong id="summary-today-sales">0 FCFA</strong>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <nav class="bottom-nav" aria-label="Navigation principale">
+          <button class="nav-item active" data-target="cash-tab" type="button">
+            <span>🏠</span>
+            <small>Caisse</small>
+          </button>
+          <button class="nav-item" data-target="debts-tab" type="button">
+            <span>📖</span>
+            <small>Dettes</small>
+          </button>
+          <button class="nav-item" data-target="summary-tab" type="button">
+            <span>📊</span>
+            <small>Bilan</small>
+          </button>
+        </nav>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const tabPanels = document.querySelectorAll('.tab-panel');
+        const navItems = document.querySelectorAll('.nav-item');
+
+        function showTab(target) {
+          tabPanels.forEach((panel) => {
+            const isActive = panel.id === target;
+            panel.classList.toggle('active', isActive);
+            panel.style.display = isActive ? 'grid' : 'none';
+          });
+
+          navItems.forEach((item) => {
+            const isActive = item.dataset.target === target;
+            item.classList.toggle('active', isActive);
+          });
+        }
+
+        navItems.forEach((button) => {
+          button.addEventListener('click', function () {
+            const target = button.dataset.target;
+            if (target) {
+              showTab(target);
+            }
+          });
+        });
+
+        showTab('cash-tab');
+      });
+    </script>
+  </body>
+</html>

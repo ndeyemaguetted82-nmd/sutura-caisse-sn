@@ -1,0 +1,11 @@
+{
+  "name": "Sutura Caisse",
+  "short_name": "Sutura Caisse",
+  "description": "Application mobile de gestion de caisse, dettes et bilan ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#170d14",
+  "theme_color": "#1d684a",
+  "orientation": "portrait",
+  "icons": []
+}
