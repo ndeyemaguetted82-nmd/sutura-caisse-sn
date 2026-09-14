@@ -22,7 +22,7 @@ const defaultState = {
 
 let currentUser = getCurrentAuthUser();
 let state = loadState();
-
+initializeAuthView();
 const saleForm = document.getElementById('sale-form');
 const debtForm = document.getElementById('debt-form');
 const salesList = document.getElementById('sales-list');
